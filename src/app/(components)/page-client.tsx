@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RecipeCard } from "@/components/RecipeCard";
 import { useFavorites } from "@/hooks/use-favorites";
-import { UploadCloud, Salad, Sparkles, ChefHat } from "lucide-react";
+import { UploadCloud, Salad, Sparkles, ChefHat, Loader2 } from "lucide-react";
 
 const dietaryOptions = [
   { id: "vegetarian", label: "Vegetarian" },
@@ -152,10 +152,10 @@ export default function PageClient() {
               </CardTitle>
               <CardDescription>Here's what we found in your photo.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="min-h-[6rem]">
               {isLoadingIngredients ? (
-                <div className="flex flex-wrap gap-2">
-                  {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-8 w-24 rounded-full" />)}
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : ingredients.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
@@ -166,7 +166,9 @@ export default function PageClient() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Upload an image to see ingredients here.</p>
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-sm text-muted-foreground">Upload an image to see ingredients here.</p>
+                </div>
               )}
             </CardContent>
           </Card>
