@@ -46,10 +46,11 @@ export default function PageClient() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    let stream: MediaStream | null = null;
     const getCameraPermission = async () => {
       if (!showCamera) return;
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
         setHasCameraPermission(true);
 
         if (videoRef.current) {
@@ -70,10 +71,9 @@ export default function PageClient() {
     getCameraPermission();
     
     return () => {
-        if (videoRef.current && videoRef.current.srcObject) {
-            const stream = videoRef.current.srcObject as MediaStream;
-            stream.getTracks().forEach(track => track.stop());
-        }
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
     }
   }, [showCamera, toast]);
 
@@ -350,6 +350,5 @@ export default function PageClient() {
       </div>
     </div>
   );
-}
 
     
