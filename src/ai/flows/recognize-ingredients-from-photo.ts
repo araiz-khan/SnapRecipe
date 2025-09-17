@@ -24,7 +24,7 @@ export type RecognizeIngredientsFromPhotoInput = z.infer<typeof RecognizeIngredi
 const RecognizeIngredientsFromPhotoOutputSchema = z.object({
   ingredients: z
     .array(z.string())
-    .describe('A list of ingredients identified in the photo.'),
+    .describe('A comprehensive list of all ingredients identified in the photo.'),
   recipeSuggestions: z
     .array(z.string())
     .describe('A list of recipe suggestions based on the identified ingredients.'),
@@ -41,11 +41,13 @@ const prompt = ai.definePrompt({
   name: 'recognizeIngredientsFromPhotoPrompt',
   input: {schema: RecognizeIngredientsFromPhotoInputSchema},
   output: {schema: RecognizeIngredientsFromPhotoOutputSchema},
-  prompt: `You are a chef. You will identify the ingredients in a photo, and then suggest recipes using those ingredients.
+  prompt: `You are an expert chef. Your task is to meticulously identify every single ingredient visible in the provided photo. Be as comprehensive as possible.
+
+After identifying the ingredients, suggest a few creative recipes that can be made using them.
 
 Ingredients Photo: {{media url=photoDataUri}}
 
-Return the ingredients in a list. Then return the recipe suggestions in a list.
+Return a comprehensive list of all identified ingredients. Then, provide a list of recipe suggestions.
 `,
 });
 
