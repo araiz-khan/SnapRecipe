@@ -139,19 +139,13 @@ export default function PageClient() {
                 className="relative flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => fileInputRef.current?.click()}
               >
-                {imageUrl && !isLoadingIngredients ? (
+                {imageUrl ? (
                   <Image src={imageUrl} alt="Uploaded Ingredients" layout="fill" objectFit="contain" className="rounded-lg p-2" />
                 ) : (
                   <div className="text-center">
-                     {isLoadingIngredients ? (
-                        <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
-                      ) : (
-                        <>
-                          <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
-                          <p className="mt-4 text-sm text-muted-foreground">Click to upload or drag and drop</p>
-                          <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
-                        </>
-                      )}
+                    <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <p className="mt-4 text-sm text-muted-foreground">Click to upload or drag and drop</p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
                   </div>
                 )}
                 <Input
