@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { recognizeIngredientsFromPhoto } from "@/ai/flows/recognize-ingredients-from-photo";
 import { generateRecipesFromIngredients, GenerateRecipesFromIngredientsOutput } from "@/ai/flows/generate-recipes-from-ingredients";
@@ -14,7 +15,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RecipeCard } from "@/components/RecipeCard";
 import { useFavorites } from "@/hooks/use-favorites";
-import { UploadCloud, Salad, Sparkles, ChefHat, Loader2 } from "lucide-react";
+import { UploadCloud, Salad, Sparkles, ChefHat, Loader2, Camera, X } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const dietaryOptions = [
   { id: "vegetarian", label: "Vegetarian" },
@@ -34,42 +36,79 @@ export default function PageClient() {
   const [error, setError] = useState<string | null>(null);
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
   const [hasUploaded, setHasUploaded] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
 
   const { toast } = useToast();
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const getCameraPermission = async () => {
+      if (!showCamera) return;
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        setHasCameraPermission(true);
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+        toast({
+          variant: 'destructive',
+          title: 'Camera Access Denied',
+          description: 'Please enable camera permissions in your browser settings to use this feature.',
+        });
+        setShowCamera(false);
+      }
+    };
+
+    getCameraPermission();
+    
+    return () => {
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+        }
+    }
+  }, [showCamera, toast]);
+
+
+  const processImage = async (dataUri: string) => {
+    setImageUrl(dataUri);
+    setIsLoadingIngredients(true);
+    setHasUploaded(true);
+    setIngredients([]);
+    setRecipes([]);
+    setError(null);
+    try {
+      const { ingredients: recognizedIngredients } = await recognizeIngredientsFromPhoto({ photoDataUri: dataUri });
+      setIngredients(recognizedIngredients);
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
+      setError("Failed to recognize ingredients. Please try another photo.");
+      toast({
+        variant: "destructive",
+        title: "Recognition Failed",
+        description: errorMessage,
+      });
+    } finally {
+      setIsLoadingIngredients(false);
+    }
+  }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Reset state for new upload
-    setImageUrl(null);
-    setIngredients([]);
-    setRecipes([]);
-    setError(null);
-    setIsLoadingIngredients(true);
-    setHasUploaded(true);
-
     try {
       const reader = new FileReader();
-      reader.onloadend = async () => {
-        const dataUri = reader.result as string;
-        setImageUrl(dataUri);
-        try {
-          const { ingredients: recognizedIngredients } = await recognizeIngredientsFromPhoto({ photoDataUri: dataUri });
-          setIngredients(recognizedIngredients);
-        } catch (e) {
-            const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
-            setError("Failed to recognize ingredients. Please try another photo.");
-            toast({
-              variant: "destructive",
-              title: "Recognition Failed",
-              description: errorMessage,
-            });
-        } finally {
-            setIsLoadingIngredients(false);
-        }
+      reader.onloadend = () => {
+        processImage(reader.result as string);
       };
       reader.readAsDataURL(file);
     } catch (e) {
@@ -84,12 +123,29 @@ export default function PageClient() {
     }
   };
 
+   const handleCapture = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        const dataUri = canvas.toDataURL('image/jpeg');
+        processImage(dataUri);
+      }
+      setShowCamera(false);
+    }
+  };
+
+
   const handleGenerateRecipes = async () => {
     if (ingredients.length === 0) {
       toast({
         variant: "destructive",
         title: "No Ingredients",
-        description: "Please upload a photo to identify ingredients first.",
+        description: "Please upload or capture a photo to identify ingredients first.",
       });
       return;
     }
@@ -121,6 +177,15 @@ export default function PageClient() {
       checked ? [...prev, id] : prev.filter(item => item !== id)
     );
   };
+  
+  const openCamera = () => {
+    setImageUrl(null);
+    setIngredients([]);
+    setRecipes([]);
+    setError(null);
+    setHasUploaded(false);
+    setShowCamera(true);
+  }
 
   return (
     <div className="container mx-auto p-4 md:p-8 flex-1">
@@ -128,13 +193,43 @@ export default function PageClient() {
         <div className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-headline text-2xl">
-                <UploadCloud className="h-6 w-6 text-primary" />
-                1. Upload Your Ingredients
+              <CardTitle className="flex items-center justify-between font-headline text-2xl">
+                 <div className="flex items-center gap-2">
+                    <UploadCloud className="h-6 w-6 text-primary" />
+                    1. Get Your Ingredients
+                 </div>
+                 <div className="flex gap-2">
+                   <Button variant="outline" size="icon" onClick={openCamera} aria-label="Open Camera">
+                      <Camera className="h-5 w-5" />
+                   </Button>
+                 </div>
               </CardTitle>
-              <CardDescription>Take a photo of your ingredients and we'll do the rest.</CardDescription>
+              <CardDescription>Upload a photo or use your camera to snap a pic of your ingredients.</CardDescription>
             </CardHeader>
             <CardContent>
+             {showCamera ? (
+                <div className="space-y-4">
+                  <div className="relative">
+                    <video ref={videoRef} className="w-full aspect-video rounded-md bg-black" autoPlay muted playsInline />
+                     <Button variant="ghost" size="icon" className="absolute top-2 right-2 bg-black/50 hover:bg-black/75 text-white" onClick={() => setShowCamera(false)}>
+                        <X className="h-5 w-5"/>
+                     </Button>
+                  </div>
+                  {hasCameraPermission === false && (
+                    <Alert variant="destructive">
+                      <AlertTitle>Camera Access Denied</AlertTitle>
+                      <AlertDescription>
+                        Please enable camera permissions in your browser settings to use this feature.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  <Button onClick={handleCapture} disabled={hasCameraPermission !== true} className="w-full">
+                    <Camera className="mr-2 h-4 w-4" />
+                    Capture Photo
+                  </Button>
+                  <canvas ref={canvasRef} className="hidden" />
+                </div>
+              ) : (
               <div
                 className="relative flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => fileInputRef.current?.click()}
@@ -156,6 +251,7 @@ export default function PageClient() {
                   accept="image/*"
                 />
               </div>
+              )}
             </CardContent>
           </Card>
 
@@ -255,3 +351,5 @@ export default function PageClient() {
     </div>
   );
 }
+
+    
