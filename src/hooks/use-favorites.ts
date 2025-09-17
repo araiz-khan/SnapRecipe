@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
+import type { GenerateRecipesFromIngredientsOutput } from '@/ai/flows/generate-recipes-from-ingredients';
 
 const FAVORITES_KEY = 'snaprecipe-favorites';
+type Recipe = GenerateRecipesFromIngredientsOutput['recipes'][0];
+
 
 export const useFavorites = () => {
   const [favorites, setFavorites] = useState<string[]>([]);
@@ -29,18 +32,21 @@ export const useFavorites = () => {
     }
   };
 
-  const addFavorite = useCallback((recipe: string) => {
-    if (!favorites.includes(recipe)) {
-      saveFavorites([...favorites, recipe]);
+  const addFavorite = useCallback((recipe: Recipe | string) => {
+    const recipeString = typeof recipe === 'string' ? recipe : JSON.stringify(recipe);
+    if (!favorites.includes(recipeString)) {
+      saveFavorites([...favorites, recipeString]);
     }
-  }, [favorites, saveFavorites]);
+  }, [favorites]);
 
-  const removeFavorite = useCallback((recipe: string) => {
-    saveFavorites(favorites.filter((fav) => fav !== recipe));
-  }, [favorites, saveFavorites]);
+  const removeFavorite = useCallback((recipe: Recipe | string) => {
+     const recipeString = typeof recipe === 'string' ? recipe : JSON.stringify(recipe);
+    saveFavorites(favorites.filter((fav) => fav !== recipeString));
+  }, [favorites]);
 
-  const isFavorite = useCallback((recipe: string) => {
-    return favorites.includes(recipe);
+  const isFavorite = useCallback((recipe: Recipe | string) => {
+    const recipeString = typeof recipe === 'string' ? recipe : JSON.stringify(recipe);
+    return favorites.includes(recipeString);
   }, [favorites]);
 
   return { favorites, addFavorite, removeFavorite, isFavorite, isLoaded };

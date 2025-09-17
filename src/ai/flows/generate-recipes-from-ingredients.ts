@@ -4,7 +4,7 @@
  *
  * - generateRecipesFromIngredients - A function that generates recipe suggestions based on the identified ingredients.
  * - GenerateRecipesFromIngredientsInput - The input type for the generateRecipesFromIngredients function.
- * - GenerateRecipesFromIngredientsOutput - The return type for the generateRecipesFromIngredients function.
+ * - GenerateRecipesFromIngredientsOutput - The return type for the generateRecipesFrom-ingredients function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -23,9 +23,15 @@ export type GenerateRecipesFromIngredientsInput = z.infer<
   typeof GenerateRecipesFromIngredientsInputSchema
 >;
 
+const RecipeSchema = z.object({
+    title: z.string().describe("The title of the recipe."),
+    ingredients: z.array(z.string()).describe("A list of ingredients for the recipe."),
+    instructions: z.array(z.string()).describe("The step-by-step instructions for preparing the recipe."),
+});
+
 const GenerateRecipesFromIngredientsOutputSchema = z.object({
   recipes: z
-    .array(z.string())
+    .array(RecipeSchema)
     .describe('An array of recipe suggestions based on the identified ingredients.'),
 });
 export type GenerateRecipesFromIngredientsOutput = z.infer<
@@ -42,7 +48,7 @@ const prompt = ai.definePrompt({
   name: 'generateRecipesFromIngredientsPrompt',
   input: {schema: GenerateRecipesFromIngredientsInputSchema},
   output: {schema: GenerateRecipesFromIngredientsOutputSchema},
-  prompt: `You are a recipe generation expert. Given a list of ingredients, you will generate multiple recipe suggestions.
+  prompt: `You are a recipe generation expert. Given a list of ingredients, you will generate multiple recipe suggestions. For each recipe, provide a title, a list of ingredients, and step-by-step instructions.
 
 Ingredients: {{{ingredients}}}
 

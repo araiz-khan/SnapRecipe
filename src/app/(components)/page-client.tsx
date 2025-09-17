@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import { recognizeIngredientsFromPhoto } from "@/ai/flows/recognize-ingredients-from-photo";
-import { generateRecipesFromIngredients } from "@/ai/flows/generate-recipes-from-ingredients";
+import { generateRecipesFromIngredients, GenerateRecipesFromIngredientsOutput } from "@/ai/flows/generate-recipes-from-ingredients";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,10 +23,12 @@ const dietaryOptions = [
   { id: "dairy-free", label: "Dairy-Free" },
 ];
 
+type Recipe = GenerateRecipesFromIngredientsOutput['recipes'][0];
+
 export default function PageClient() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [ingredients, setIngredients] = useState<string[]>([]);
-  const [recipes, setRecipes] = useState<string[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isLoadingIngredients, setIsLoadingIngredients] = useState(false);
   const [isLoadingRecipes, setIsLoadingRecipes] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,13 +139,19 @@ export default function PageClient() {
                 className="relative flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => fileInputRef.current?.click()}
               >
-                {imageUrl ? (
+                {imageUrl && !isLoadingIngredients ? (
                   <Image src={imageUrl} alt="Uploaded Ingredients" layout="fill" objectFit="contain" className="rounded-lg p-2" />
                 ) : (
                   <div className="text-center">
-                    <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <p className="mt-4 text-sm text-muted-foreground">Click to upload or drag and drop</p>
-                    <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
+                     {isLoadingIngredients ? (
+                        <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
+                      ) : (
+                        <>
+                          <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
+                          <p className="mt-4 text-sm text-muted-foreground">Click to upload or drag and drop</p>
+                          <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
+                        </>
+                      )}
                   </div>
                 )}
                 <Input
@@ -231,13 +239,13 @@ export default function PageClient() {
                 ))}
               </div>
             ) : recipes.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {recipes.map((recipe, index) => (
                   <RecipeCard
                     key={index}
                     recipe={recipe}
-                    isFavorite={isFavorite(recipe)}
-                    onToggleFavorite={() => isFavorite(recipe) ? removeFavorite(recipe) : addFavorite(recipe)}
+                    isFavorite={isFavorite(recipe.title)}
+                    onToggleFavorite={() => isFavorite(recipe.title) ? removeFavorite(recipe.title) : addFavorite(recipe.title)}
                   />
                 ))}
               </div>

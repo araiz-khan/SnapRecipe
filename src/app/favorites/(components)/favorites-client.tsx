@@ -5,9 +5,35 @@ import { RecipeCard } from "@/components/RecipeCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { Heart } from "lucide-react";
+import { GenerateRecipesFromIngredientsOutput } from "@/ai/flows/generate-recipes-from-ingredients";
+
+type Recipe = GenerateRecipesFromIngredientsOutput['recipes'][0];
 
 export default function FavoritesClient() {
   const { favorites, isLoaded, addFavorite, removeFavorite, isFavorite } = useFavorites();
+
+  const parseRecipe = (recipeString: string): Recipe => {
+    try {
+      const parsed = JSON.parse(recipeString);
+      // Basic validation
+      if (parsed.title && Array.isArray(parsed.ingredients) && Array.isArray(parsed.instructions)) {
+        return parsed;
+      }
+    } catch (e) {
+      // Fallback for old string format for backwards compatibility
+      return {
+        title: recipeString,
+        ingredients: [],
+        instructions: []
+      };
+    }
+    // Fallback for invalid JSON
+    return {
+        title: "Invalid Recipe Format",
+        ingredients: [],
+        instructions: []
+    }
+  }
 
   return (
     <div className="container mx-auto p-4 md:p-8 flex-1">
@@ -36,14 +62,17 @@ export default function FavoritesClient() {
 
       {isLoaded && favorites.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {favorites.map((recipe, index) => (
-            <RecipeCard
-              key={index}
-              recipe={recipe}
-              isFavorite={isFavorite(recipe)}
-              onToggleFavorite={() => isFavorite(recipe) ? removeFavorite(recipe) : addFavorite(recipe)}
-            />
-          ))}
+          {favorites.map((recipeString, index) => {
+            const recipe = parseRecipe(recipeString);
+            return (
+              <RecipeCard
+                key={index}
+                recipe={recipe}
+                isFavorite={isFavorite(recipeString)}
+                onToggleFavorite={() => isFavorite(recipeString) ? removeFavorite(recipeString) : addFavorite(recipeString)}
+              />
+            )
+          })}
         </div>
       )}
     </div>
