@@ -1,8 +1,7 @@
-// Use server directive.
 'use server';
 
 /**
- * @fileOverview Recognizes ingredients from a photo and suggests recipes.
+ * @fileOverview Recognizes ingredients from a photo.
  *
  * - recognizeIngredientsFromPhoto - A function that handles the ingredient recognition process.
  * - RecognizeIngredientsFromPhotoInput - The input type for the recognizeIngredientsFromPhoto function.
@@ -25,9 +24,6 @@ const RecognizeIngredientsFromPhotoOutputSchema = z.object({
   ingredients: z
     .array(z.string())
     .describe('A comprehensive list of all ingredients identified in the photo.'),
-  recipeSuggestions: z
-    .array(z.string())
-    .describe('A list of recipe suggestions based on the identified ingredients.'),
 });
 export type RecognizeIngredientsFromPhotoOutput = z.infer<typeof RecognizeIngredientsFromPhotoOutputSchema>;
 
@@ -41,13 +37,11 @@ const prompt = ai.definePrompt({
   name: 'recognizeIngredientsFromPhotoPrompt',
   input: {schema: RecognizeIngredientsFromPhotoInputSchema},
   output: {schema: RecognizeIngredientsFromPhotoOutputSchema},
-  prompt: `You are an expert chef. Your task is to meticulously identify every single ingredient visible in the provided photo. Be as comprehensive as possible.
-
-After identifying the ingredients, suggest a few creative recipes that can be made using them.
+  prompt: `You are an expert at identifying ingredients from a photo. Your task is to meticulously identify every single ingredient visible in the provided photo. Be as comprehensive as possible.
 
 Ingredients Photo: {{media url=photoDataUri}}
 
-Return a comprehensive list of all identified ingredients. Then, provide a list of recipe suggestions.
+Return a comprehensive list of all identified ingredients.
 `,
 });
 
