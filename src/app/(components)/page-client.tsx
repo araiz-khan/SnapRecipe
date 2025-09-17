@@ -31,6 +31,7 @@ export default function PageClient() {
   const [isLoadingRecipes, setIsLoadingRecipes] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
+  const [hasUploaded, setHasUploaded] = useState(false);
 
   const { toast } = useToast();
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
@@ -46,6 +47,7 @@ export default function PageClient() {
     setRecipes([]);
     setError(null);
     setIsLoadingIngredients(true);
+    setHasUploaded(true);
 
     try {
       const reader = new FileReader();
@@ -167,7 +169,9 @@ export default function PageClient() {
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-full">
-                  <p className="text-sm text-muted-foreground">Upload an image to see ingredients here.</p>
+                  <p className="text-sm text-muted-foreground">
+                    {hasUploaded ? 'No ingredients recognized. Try another photo.' : 'Upload an image to see ingredients here.'}
+                  </p>
                 </div>
               )}
             </CardContent>
