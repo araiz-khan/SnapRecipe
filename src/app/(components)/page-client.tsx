@@ -54,19 +54,30 @@ export default function PageClient() {
       reader.onloadend = async () => {
         const dataUri = reader.result as string;
         setImageUrl(dataUri);
-        const { ingredients: recognizedIngredients } = await recognizeIngredientsFromPhoto({ photoDataUri: dataUri });
-        setIngredients(recognizedIngredients);
+        try {
+          const { ingredients: recognizedIngredients } = await recognizeIngredientsFromPhoto({ photoDataUri: dataUri });
+          setIngredients(recognizedIngredients);
+        } catch (e) {
+            const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
+            setError("Failed to recognize ingredients. Please try another photo.");
+            toast({
+              variant: "destructive",
+              title: "Recognition Failed",
+              description: errorMessage,
+            });
+        } finally {
+            setIsLoadingIngredients(false);
+        }
       };
       reader.readAsDataURL(file);
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
-      setError("Failed to recognize ingredients. Please try another photo.");
+      setError("Failed to process image. Please try again.");
       toast({
         variant: "destructive",
-        title: "Recognition Failed",
+        title: "Image Processing Failed",
         description: errorMessage,
       });
-    } finally {
       setIsLoadingIngredients(false);
     }
   };
