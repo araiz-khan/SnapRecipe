@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/Logo';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
+import { ThemeToggle } from './theme-toggle';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -34,6 +35,7 @@ export default function Header() {
               {link.label}
             </Link>
           ))}
+           <ThemeToggle />
         </nav>
       </div>
     </header>
